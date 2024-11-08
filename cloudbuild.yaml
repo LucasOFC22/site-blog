@@ -1,0 +1,23 @@
+steps:
+  # Passo 1: Baixar os arquivos do Firebase Storage para o diretório local correto
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args: ['beta', 'storage', 'cp', 'gs://blog-cepi.firebasestorage.app/postagens/*', './public/postagens/']
+
+  # Passo 2: Baixar a chave de conta de serviço do Secret Manager
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        # Baixar o segredo da chave de conta de serviço do Secret Manager
+        gcloud secrets versions access latest --secret="firebase-service-account-key" > /workspace/firebase-service-account-key.json
+
+  # Passo 3: Fazer o deploy para o Firebase Hosting
+  - name: 'gcr.io/firebase-tools/firebase'
+    args: ['deploy', '--only', 'hosting']
+    env:
+      # Defina o caminho para a chave da conta de serviço
+      - 'GOOGLE_APPLICATION_CREDENTIALS=/workspace/firebase-service-account-key.json'
+
+# Timeout do processo de build
+timeout: 600s
